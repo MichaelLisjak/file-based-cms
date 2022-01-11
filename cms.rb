@@ -35,10 +35,8 @@ end
 
 
 
-# 1. When a user visits the home page, they should see a list of the documents in the CMS: history.txt, changes.txt and about.txt:
-  # create directory with the files
-  # create a view template for the list (files.erb)
-  # in files.erb, iterate through the files and print them to the browser as a list
-
-# create a filepath for every file --> helper method that takes filename and returns the path?
-# 
+# add test folder with cms_test.rb file
+# copy template minitest in cms_test.rb
+# (update gemfile with minitest?)
+# write tests for both routes and add as many assertions as I can think of
+# run the test and pray that everything works
