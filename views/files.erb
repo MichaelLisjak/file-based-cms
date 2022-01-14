@@ -1,6 +1,6 @@
-  <% if session[:error] %>
-    <div class="flash error">
-      <p><%= session.delete(:error) %></p>
+  <% if session[:message] %>
+    <div class="flash message">
+      <p><%= session.delete(:message) %></p>
    </div>
   <% end %>
   
