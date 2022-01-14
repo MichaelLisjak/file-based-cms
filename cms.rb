@@ -28,15 +28,20 @@ end
 get "/:file_name" do
   file_name = params[:file_name]
   headers["Content-Type"] = "text/plain"
-  @contents = File.read(get_file_path(file_name))
-  erb :file
+  if File.file?(get_file_path(file_name))
+    @contents = File.read(get_file_path(file_name))
+    erb :file
+  else
+    session[:error] = "#{file_name} does not exist."
+    redirect "/"
+  end
 end
 
 
 
 
-# add test folder with cms_test.rb file
-# copy template minitest in cms_test.rb
-# (update gemfile with minitest?)
-# write tests for both routes and add as many assertions as I can think of
-# run the test and pray that everything works
+# create an if clause in the "/:file_name" that handles the response for non-existing files
+# check if file exists with File.file?(file)
+  # if yes, load contents into @contents and load file.erb
+  # else use a flash error message that the file was not found and redirect to index page "/"
+  
