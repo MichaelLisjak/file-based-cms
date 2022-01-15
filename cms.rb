@@ -7,7 +7,7 @@ require "redcarpet"
 configure do
   enable :sessions
   set :session_secret, 'secret'
-  set :erb, :escape_html => true
+  #set :erb, :escape_html => true
 end
 
 root = File.expand_path("..", __FILE__) # gets the current absolute directory of the ruby program that is running
@@ -24,11 +24,11 @@ def render_markdown(md_file)
   markdown.render(md_file)
 end
 
-def load_file_content(path)
+def load_file_content(path, post_request: false)
   content = File.read(path)
   case File.extname(path)
   when ".txt"
-    headers["Content-Type"] = "text/plain"
+    headers["Content-Type"] = "text/plain" unless post_request
     content
   when ".md"
     render_markdown(content)
@@ -55,11 +55,35 @@ get "/:filename" do
   end
 end
 
+# Load the edit page for a document
+get "/:filename/edit" do
+  @filename = params[:filename]
+  file_path = root + "/data/" + @filename
+
+  if File.exist?(file_path)
+    @content = File.read(file_path) # load_file_content(file_path, post_request: true)
+    erb :edit_file
+  else
+    session[:message] = "#{params[:filename]} does not exist."
+    redirect "/"
+  end
+end
+
+# Submit changes to document
+post "/:filename" do
+  file_path = root + "/data/" + params[:filename]
+
+  File.write(file_path, params[:edited_content])
+
+  session[:message] = "#{params[:filename]} has been updated."
+  redirect "/"
+end
 
 
 
-# create an if clause in the "/:file_name" that handles the response for non-existing files
-# check if file exists with File.file?(file)
-  # if yes, load contents into @contents and load file.erb
-  # else use a flash error message that the file was not found and redirect to index page "/"
-  
+# 8. Editing Document Content
+## add a link "Edit" for every file
+## create a new route for a get request to "/:filename/edit"
+  # in the route load a form for editing the contents and display the current content in the form
+  # the form page needs a "save changes" button that submits the form to the server --> POST request route
+  # after submitting the form, redirect to the main page and display a message "$filename has been updated."

@@ -12,6 +12,12 @@ class CmsTest < Minitest::Test
     Sinatra::Application
   end
 
+  def setup
+    # load the content of about.md to use for the post request test, so the file's content stays the same
+    get "/about.md"
+    @body = last_response.body
+  end
+
   def test_index
     get "/"
     assert_equal 200, last_response.status
@@ -50,5 +56,23 @@ class CmsTest < Minitest::Test
     assert_equal 200, last_response.status
     assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
     assert_includes last_response.body, "<h1>Ruby is...</h1>"
+  end
+
+  def test_show_edit_form_page
+    get "/about.md/edit"
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<form action="
+    assert_includes last_response.body, "method=\"post\""
+  end
+
+  def test_post_request_for_file
+    post "/about.md", edited_content: @body
+    assert_equal 302, last_response.status
+    
+    get "/"
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "about.md has been updated."
   end
 end
