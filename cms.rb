@@ -10,11 +10,14 @@ configure do
   #set :erb, :escape_html => true
 end
 
-root = File.expand_path("..", __FILE__) # gets the current absolute directory of the ruby program that is running
-
-# Return the filepath for a given file
-def get_file_path(file_name)
-  @root + "/data/" + file_name
+# Return the filepath depending on environment
+def data_path
+  if ENV["RACK_ENV"] == "test"
+    # gets the current absolute directory of the ruby program that is running
+    File.expand_path("../test/data", __FILE__)
+  else
+    File.expand_path("../data", __FILE__)
+  end
 end
 
 # Returns the given markdown file as HTML
@@ -37,7 +40,8 @@ end
 
 # Display overview of all available files
 get "/" do
-  @files = Dir.glob(root + "/data/*").map do |path|
+  pattern = File.join(data_path, "*")
+  @files = Dir.glob(pattern).map do |path|
     File.basename(path)
   end
   erb :files
@@ -45,7 +49,7 @@ end
 
 # Display a specific file
 get "/:filename" do
-  file_path = root + "/data/" + params[:filename]
+  file_path = File.join(data_path, params[:filename])
 
   if File.exist?(file_path)
     load_file_content(file_path)
@@ -58,7 +62,7 @@ end
 # Load the edit page for a document
 get "/:filename/edit" do
   @filename = params[:filename]
-  file_path = root + "/data/" + @filename
+  file_path = File.join(data_path, params[:filename])
 
   if File.exist?(file_path)
     @content = File.read(file_path) # load_file_content(file_path, post_request: true)
@@ -71,19 +75,10 @@ end
 
 # Submit changes to document
 post "/:filename" do
-  file_path = root + "/data/" + params[:filename]
+  file_path = File.join(data_path, params[:filename])
 
   File.write(file_path, params[:edited_content])
 
   session[:message] = "#{params[:filename]} has been updated."
   redirect "/"
 end
-
-
-
-# 8. Editing Document Content
-## add a link "Edit" for every file
-## create a new route for a get request to "/:filename/edit"
-  # in the route load a form for editing the contents and display the current content in the form
-  # the form page needs a "save changes" button that submits the form to the server --> POST request route
-  # after submitting the form, redirect to the main page and display a message "$filename has been updated."
