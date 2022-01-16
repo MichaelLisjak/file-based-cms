@@ -34,7 +34,7 @@ def load_file_content(path, post_request: false)
     headers["Content-Type"] = "text/plain" unless post_request
     content
   when ".md"
-    render_markdown(content)
+    erb render_markdown(content)
   end
 end
 
@@ -82,3 +82,10 @@ post "/:filename" do
   session[:message] = "#{params[:filename]} has been updated."
   redirect "/"
 end
+
+# 10. Adding global style and behaviour
+
+# create a css file for the stylesheet
+  # use sans-serif font and add a little padding around the outside
+  # session message should have yellow background
+  # use sans-serif typeface for everything but the display of textfiles
