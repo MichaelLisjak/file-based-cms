@@ -107,7 +107,6 @@ class CmsTest < Minitest::Test
     assert_includes last_response.body, "method=\"post\""
     assert_includes last_response.body, %q(<button type="submit")
     
-
     post "/new", new_document: "test.txt"
 
     get last_response["Location"]
@@ -124,5 +123,23 @@ class CmsTest < Minitest::Test
 
     assert_equal last_response.status, 422
     assert_includes last_response.body, "file must be of type .txt or .md"
+
+    get "/"
+    refute_includes last_response.body, "file must be of type .txt or .md"
+  end
+
+  def test_delete_file
+    create_document "test.md"
+
+    post "/test.md/destroy"
+
+    assert_equal 302, last_response.status
+
+    get last_response["Location"]
+
+    assert_includes last_response.body, "test.md has been deleted." 
+
+    get "/"
+    refute_includes last_response.body, "test.md"
   end
 end

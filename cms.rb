@@ -102,11 +102,16 @@ post "/:filename" do
   redirect "/"
 end
 
+post "/:filename/destroy" do
+  file_path = File.join(data_path, params[:filename])
+  File.delete(file_path)
 
-# 12. Creating new documents
+  session[:message] = "#{params[:filename]} has been deleted."
+  redirect "/"
+end
 
-#-- add link to the main page for new documents
-#-- add get route for creating new document "/new"
-# add post route for sending new document information to server
-  # if file was successfully created, redirect to main page and display success message
-  # else if no name was entered, reload the submission form and display a message saying name is required 
+
+# 13. Deleting documents
+
+# create a botton for deleting a file next to each file in index page
+# 
