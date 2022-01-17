@@ -47,6 +47,25 @@ get "/" do
   erb :files
 end
 
+# Create a new document
+get "/new" do
+  erb :new
+end
+
+# Submit the new document to the server
+post "/new" do 
+  if params[:new_document].match(/\.(txt|md)/)  #.size == 0
+    session[:message] = "#{params[:new_document]} has been successfully created!"
+    file_path = File.join(data_path, params[:new_document])
+    File.new(file_path, 111)
+    redirect "/"
+  else
+    session[:message] = "file must be of type .txt or .md"
+    status 422
+    erb :new
+  end
+end
+
 # Display a specific file
 get "/:filename" do
   file_path = File.join(data_path, params[:filename])
@@ -83,9 +102,11 @@ post "/:filename" do
   redirect "/"
 end
 
-# 10. Adding global style and behaviour
 
-# create a css file for the stylesheet
-  # use sans-serif font and add a little padding around the outside
-  # session message should have yellow background
-  # use sans-serif typeface for everything but the display of textfiles
+# 12. Creating new documents
+
+#-- add link to the main page for new documents
+#-- add get route for creating new document "/new"
+# add post route for sending new document information to server
+  # if file was successfully created, redirect to main page and display success message
+  # else if no name was entered, reload the submission form and display a message saying name is required 

@@ -98,4 +98,31 @@ class CmsTest < Minitest::Test
     assert_equal 200, last_response.status
     assert_includes last_response.body, "about.md has been updated."
   end
+
+  def test_create_new_txt_or_md_file
+    get "/new"
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<form action=\"/new\""
+    assert_includes last_response.body, "method=\"post\""
+    assert_includes last_response.body, %q(<button type="submit")
+    
+
+    post "/new", new_document: "test.txt"
+
+    get last_response["Location"]
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "test.txt has been successfully created!"
+  end
+
+  def test_create_invalid_file
+    get "/new"
+
+    assert_equal 200, last_response.status
+
+    post "/new", new_document: "test.xtx"
+
+    assert_equal last_response.status, 422
+    assert_includes last_response.body, "file must be of type .txt or .md"
+  end
 end
