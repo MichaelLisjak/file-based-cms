@@ -40,11 +40,15 @@ end
 
 # Display overview of all available files
 get "/" do
-  pattern = File.join(data_path, "*")
-  @files = Dir.glob(pattern).map do |path|
-    File.basename(path)
+  if session[:username] == "admin"
+    pattern = File.join(data_path, "*")
+    @files = Dir.glob(pattern).map do |path|
+      File.basename(path)
+    end
+    erb :files
+  else
+    redirect "/users/signin"
   end
-  erb :files
 end
 
 # Create a new document
@@ -110,8 +114,37 @@ post "/:filename/destroy" do
   redirect "/"
 end
 
+# Form to login with username and password
+get "/users/signin" do
+erb :sign_in
+end
 
-# 13. Deleting documents
+# Handling the login data
+post "/users/signin" do
+# the sign in data is handled in this route
+  if params[:username] == "admin" && params[:password] == "secret"
+    session[:username] = "admin"
+    session[:message] = "Welcome!"
+    redirect "/"
+  else
+    session[:message] = "Invalid Credentials"
+    status 422
+    erb :sign_in
+  end
+end
 
-# create a botton for deleting a file next to each file in index page
-# 
+# delete the username from the session
+post "/users/signout" do
+  session.delete(:username)
+  session[:message] = "You have been signed out."
+  redirect "/"
+end
+
+# 14. Signing in and out
+
+# create a logged in status in the session
+# change the route on the index page to display either the sign in button or the regular files depending on signed in status
+# create a get route for the sign in button that takes the user to a login page /users/signin
+# create a post route for the sign in button that submits the username and password to the server
+# add signed in info and sign out button on main page
+
