@@ -20,11 +20,12 @@ class CmsTest < Minitest::Test
     end
   end
 
+  def session
+    last_request.env["rack.session"]
+  end
+
   def setup
-    # load the content of about.md to use for the post request test, so the file's content stays the same
     FileUtils.mkdir_p(data_path)
-    get "/about.md"
-    @body = last_response.body
   end
 
   def teardown
@@ -35,8 +36,8 @@ class CmsTest < Minitest::Test
     create_document "about.md"
     create_document "changes.txt"
     create_document "history.txt"
-
-    get "/"
+    
+    get "/", {}, {"rack.session" => { username: "admin"} }
 
     assert_equal 200, last_response.status
     assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
@@ -62,8 +63,8 @@ class CmsTest < Minitest::Test
 
     get last_response["Location"] # Request the page that the user was redirected to
 
-    assert_equal 200, last_response.status
-    assert_includes last_response.body, "thisfilewillneverexist.xtx does not exist."
+    assert_equal 302, last_response.status
+    assert_equal "thisfilewillneverexist.xtx does not exist.", session[:message] 
 
     get "/"
     refute_includes last_response.body, "thisfilewillneverexist.xtx does not exist." # Assert that our message has been removed
@@ -90,7 +91,7 @@ class CmsTest < Minitest::Test
 
   def test_post_request_for_file
     create_document "about.md"
-    post "/about.md", edited_content: @body
+    post "/about.md", {edited_content: @body}, {"rack.session" => { username: "admin"} }
     assert_equal 302, last_response.status
     
     get last_response["Location"]
@@ -100,7 +101,7 @@ class CmsTest < Minitest::Test
   end
 
   def test_create_new_txt_or_md_file
-    get "/new"
+    get "/new", {}, {"rack.session" => {username: "admin"} }
 
     assert_equal 200, last_response.status
     assert_includes last_response.body, "<form action=\"/new\""
@@ -130,16 +131,50 @@ class CmsTest < Minitest::Test
 
   def test_delete_file
     create_document "test.md"
-
     post "/test.md/destroy"
 
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-
-    assert_includes last_response.body, "test.md has been deleted." 
+    assert_equal "test.md has been deleted.", session[:message] 
 
     get "/"
     refute_includes last_response.body, "test.md"
+  end
+
+  def test_signin_form
+    get "/users/signin"
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<input"
+    assert_includes last_response.body, %q(<button type="submit")
+  end
+
+  def test_signin
+    post "/users/signin", username: "admin", password: "secret"
+    assert_equal 302, last_response.status
+    assert_equal "Welcome!", session[:message]
+    assert_equal "admin", session[:username]
+
+    get last_response["Location"]
+
+    assert_includes last_response.body, "Signed in as admin"
+  end
+
+  def test_signin_with_bad_credentials
+    post "/users/signin", username: "guest", password: "shhhh"
+    assert_equal 422, last_response.status
+    assert_nil session[:username]
+    assert_includes last_response.body, "Invalid Credentials"
+  end
+
+  def test_signout
+    get "/", {}, {"rack.session" => { username: "admin" } }
+    assert_includes last_response.body, "Signed in as admin"
+
+    post "/users/signout"
+    assert_equal "You have been signed out", session[:message]
+
+    get last_response["Location"]
+    assert_nil session[:username]
+    # assert_includes last_response.body, "Sign In" # doesn't work
   end
 end

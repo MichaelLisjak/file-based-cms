@@ -1,7 +1,14 @@
-<form action="/users/signin" method="post">
+<!-- views/signin.erb -->
+<form method="post" action="/users/signin">
   <div>
-    <p><label for="username">Username:</label><input name="username" id="username" /></p>
-    <p><label for="password">Password:</label><input name="password" id="password" /></p>
-    <button type="submit">Sign In</button>
+    <label for="username"> Username:
+      <input name="username" id="username" value="<%= params[:username] %>"/>
+    </label>
   </div>
+  <div>
+    <label for="password"> Password:
+      <input type="password" id="password" name="password" />
+    </label>
+  </div>
+  <button type="submit">Sign In</button>
 </form>
