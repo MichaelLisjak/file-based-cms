@@ -24,6 +24,10 @@ class CmsTest < Minitest::Test
     last_request.env["rack.session"]
   end
 
+  def admin_session
+    { "rack.session" => { username: "admin" } }
+  end
+
   def setup
     FileUtils.mkdir_p(data_path)
   end
@@ -37,7 +41,7 @@ class CmsTest < Minitest::Test
     create_document "changes.txt"
     create_document "history.txt"
     
-    get "/", {}, {"rack.session" => { username: "admin"} }
+    get "/", {}, admin_session
 
     assert_equal 200, last_response.status
     assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
@@ -48,7 +52,7 @@ class CmsTest < Minitest::Test
 
   def test_get_document_history
     create_document "history.txt", "Yukihiro Matsumoto released"
-    get "/history.txt"
+    get "/history.txt", {}, admin_session
 
     assert_equal 200, last_response.status
     assert_equal "text/plain", last_response["Content-Type"]
@@ -57,14 +61,14 @@ class CmsTest < Minitest::Test
   end
 
   def test_document_not_found
-    get "/thisfilewillneverexist.xtx"
+    get "/thisfilewillneverexist.xtx", {}, admin_session
 
     assert_equal 302, last_response.status
+    assert_equal "thisfilewillneverexist.xtx does not exist.", session[:message]
 
     get last_response["Location"] # Request the page that the user was redirected to
 
-    assert_equal 302, last_response.status
-    assert_equal "thisfilewillneverexist.xtx does not exist.", session[:message] 
+    assert_equal 200, last_response.status
 
     get "/"
     refute_includes last_response.body, "thisfilewillneverexist.xtx does not exist." # Assert that our message has been removed
@@ -72,7 +76,7 @@ class CmsTest < Minitest::Test
 
   def test_viewing_markdown_document
     create_document "about.md", "<h1>Ruby is...</h1>"
-    get "/about.md"
+    get "/about.md", {}, admin_session
 
     assert_equal 200, last_response.status
     assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
@@ -81,7 +85,7 @@ class CmsTest < Minitest::Test
 
   def test_show_edit_form_page
     create_document "about.md"
-    get "/about.md/edit"
+    get "/about.md/edit", {}, admin_session
 
     assert_equal 200, last_response.status
     assert_includes last_response.body, "<form action="
@@ -91,7 +95,7 @@ class CmsTest < Minitest::Test
 
   def test_post_request_for_file
     create_document "about.md"
-    post "/about.md", {edited_content: @body}, {"rack.session" => { username: "admin"} }
+    post "/about.md", {edited_content: @body}, admin_session
     assert_equal 302, last_response.status
     
     get last_response["Location"]
@@ -101,7 +105,7 @@ class CmsTest < Minitest::Test
   end
 
   def test_create_new_txt_or_md_file
-    get "/new", {}, {"rack.session" => {username: "admin"} }
+    get "/new", {}, admin_session
 
     assert_equal 200, last_response.status
     assert_includes last_response.body, "<form action=\"/new\""
@@ -116,7 +120,7 @@ class CmsTest < Minitest::Test
   end
 
   def test_create_invalid_file
-    get "/new"
+    get "/new", {}, admin_session
 
     assert_equal 200, last_response.status
 
@@ -131,13 +135,15 @@ class CmsTest < Minitest::Test
 
   def test_delete_file
     create_document "test.md"
-    post "/test.md/destroy"
+    post "/test.md/destroy", {}, admin_session
 
     assert_equal 302, last_response.status
+    
     assert_equal "test.md has been deleted.", session[:message] 
 
     get "/"
-    refute_includes last_response.body, "test.md"
+  
+    refute_equal "test.md has been deleted.", session[:message]
   end
 
   def test_signin_form
@@ -167,7 +173,7 @@ class CmsTest < Minitest::Test
   end
 
   def test_signout
-    get "/", {}, {"rack.session" => { username: "admin" } }
+    get "/", {}, admin_session
     assert_includes last_response.body, "Signed in as admin"
 
     post "/users/signout"
@@ -176,5 +182,46 @@ class CmsTest < Minitest::Test
     get last_response["Location"]
     assert_nil session[:username]
     # assert_includes last_response.body, "Sign In" # doesn't work
+  end
+
+  def test_restrict_actions_if_not_signed_in
+    get "/new"
+    assert_equal 302, last_response.status
+    assert_equal "You must be signed in to do that.", session[:message]
+    
+    create_document "testme.txt"
+    get "/testme.txt"
+    assert_equal "You must be signed in to do that.", session[:message]
+
+    get "/testme.txt/edit"
+    assert_equal "You must be signed in to do that.", session[:message]
+
+    post "/testme.txt"
+    assert_equal "You must be signed in to do that.", session[:message]
+
+    post "testme.txt/destroy"
+    assert_equal "You must be signed in to do that.", session[:message]
+
+    # after signing in as admin, the you must be signed in ... message is not displayed anymore
+    get "/new", {}, admin_session
+    refute_equal "You must be signed in to do that.", session[:message]
+
+    create_document "testme.txt"
+    get "/testme.txt"
+    refute_equal "You must be signed in to do that.", session[:message]
+
+    get "/testme.txt/edit"
+    refute_equal "You must be signed in to do that.", session[:message]
+
+    assert_equal "admin", session[:username]
+    post "testme.txt/destroy", {}, admin_session # don't know why I have to add the admin session again here
+    assert_equal "admin", session[:username]
+    refute_equal "You must be signed in to do that.", session[:message]
+
+    post "/testme.txt"
+    refute_equal "You must be signed in to do that.", session[:message]
+
+
+
   end
 end

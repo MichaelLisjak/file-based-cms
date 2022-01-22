@@ -38,6 +38,17 @@ def load_file_content(path, post_request: false)
   end
 end
 
+def user_signed_in?
+  session[:username] == "admin"
+end
+
+def require_signed_in_user
+  if !user_signed_in?
+    session[:message] = "You must be signed in to do that."
+    redirect "/"
+  end
+end
+
 # Display overview of all available files
 get "/" do
   if session[:username] == "admin"
@@ -53,6 +64,7 @@ end
 
 # Create a new document
 get "/new" do
+  require_signed_in_user
   erb :new
 end
 
@@ -72,6 +84,7 @@ end
 
 # Display a specific file
 get "/:filename" do
+  require_signed_in_user
   file_path = File.join(data_path, params[:filename])
 
   if File.exist?(file_path)
@@ -84,6 +97,7 @@ end
 
 # Load the edit page for a document
 get "/:filename/edit" do
+  require_signed_in_user
   @filename = params[:filename]
   file_path = File.join(data_path, params[:filename])
 
@@ -98,6 +112,7 @@ end
 
 # Submit changes to document
 post "/:filename" do
+  require_signed_in_user
   file_path = File.join(data_path, params[:filename])
 
   File.write(file_path, params[:edited_content])
@@ -107,7 +122,9 @@ post "/:filename" do
 end
 
 post "/:filename/destroy" do
+  require_signed_in_user
   file_path = File.join(data_path, params[:filename])
+  
   File.delete(file_path)
 
   session[:message] = "#{params[:filename]} has been deleted."
@@ -140,11 +157,10 @@ post "/users/signout" do
   redirect "/"
 end
 
-# 14. Signing in and out
+# 16. Restricting actions to only signed-in users
 
-# create a logged in status in the session
-# change the route on the index page to display either the sign in button or the regular files depending on signed in status
-# create a get route for the sign in button that takes the user to a login page /users/signin
-# create a post route for the sign in button that submits the username and password to the server
-# add signed in info and sign out button on main page
+# Write a method that returns true or false based on if a user is signed in.
+# Write a method that checks the return value of the method created in #1 and, if a user is not signed in, stores a message in the session and redirects to the index page.
+# Call the method created in #2 at the beginning of actions that only signed-in users should access.
+# Add additional tests to verify that signed-out users are handled properly.
 
