@@ -3,6 +3,7 @@ require "sinatra/reloader" if development?
 require "sinatra/content_for"
 require "tilt/erubis"
 require "redcarpet"
+require "yaml"
 
 configure do
   enable :sessions
@@ -39,7 +40,7 @@ def load_file_content(path, post_request: false)
 end
 
 def user_signed_in?
-  session[:username] == "admin"
+  @users.keys.include?(session[:username])
 end
 
 def require_signed_in_user
@@ -49,9 +50,29 @@ def require_signed_in_user
   end
 end
 
+def user_valid?(username, password)
+  @users.each do |user, pw|
+    return true if (user == username && password == pw)
+  end
+  false
+end
+
+def load_user_credentials
+  credentials_path = if ENV["RACK_ENV"] == "test"
+    File.expand_path("../test/users.yaml", __FILE__)
+  else
+    File.expand_path("../users.yaml", __FILE__)
+  end
+  YAML.load_file(credentials_path)
+end
+
+before do
+  @users = load_user_credentials
+end
+
 # Display overview of all available files
 get "/" do
-  if session[:username] == "admin"
+  if user_signed_in?
     pattern = File.join(data_path, "*")
     @files = Dir.glob(pattern).map do |path|
       File.basename(path)
@@ -124,7 +145,7 @@ end
 post "/:filename/destroy" do
   require_signed_in_user
   file_path = File.join(data_path, params[:filename])
-  
+
   File.delete(file_path)
 
   session[:message] = "#{params[:filename]} has been deleted."
@@ -138,9 +159,9 @@ end
 
 # Handling the login data
 post "/users/signin" do
-# the sign in data is handled in this route
-  if params[:username] == "admin" && params[:password] == "secret"
-    session[:username] = "admin"
+
+  if user_valid?(params[:username], params[:password] )
+    session[:username] = params[:username]
     session[:message] = "Welcome!"
     redirect "/"
   else
@@ -157,10 +178,9 @@ post "/users/signout" do
   redirect "/"
 end
 
-# 16. Restricting actions to only signed-in users
-
-# Write a method that returns true or false based on if a user is signed in.
-# Write a method that checks the return value of the method created in #1 and, if a user is not signed in, stores a message in the session and redirects to the index page.
-# Call the method created in #2 at the beginning of actions that only signed-in users should access.
-# Add additional tests to verify that signed-out users are handled properly.
+# 17. storing user accounts in an external file
+  # create a yaml file for the user account data
+  # change the post users/signin route to check if username and password combination is included in the yml file
+  # change the user signed in method to check if the user/password combination is included in the file
+  # modify the application to use "test/users.yml" to load user credentials during testing
 
