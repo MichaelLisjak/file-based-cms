@@ -4,6 +4,8 @@ require "sinatra/content_for"
 require "tilt/erubis"
 require "redcarpet"
 require "yaml"
+require "bcrypt"
+require "pry"
 
 configure do
   enable :sessions
@@ -52,7 +54,7 @@ end
 
 def user_valid?(username, password)
   @users.each do |user, pw|
-    return true if (user == username && password == pw)
+    return true if (user == username && BCrypt::Password.new(pw) == password)
   end
   false
 end
@@ -178,9 +180,11 @@ post "/users/signout" do
   redirect "/"
 end
 
-# 17. storing user accounts in an external file
-  # create a yaml file for the user account data
-  # change the post users/signin route to check if username and password combination is included in the yml file
-  # change the user signed in method to check if the user/password combination is included in the file
-  # modify the application to use "test/users.yml" to load user credentials during testing
+# 18. Storing hashed passwords
+  # add bcrypt to gemfile and run bundle install
+  # require bcrypt
+  # call the correct bcrypt method on the input params[:password] before comparing it to the database
+  # create a hashed value of each currently used password in the database and exchange the plain text password
+  # in the database with the hashed value
+  # enjoy!
 
