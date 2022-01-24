@@ -201,6 +201,26 @@ post "/users/signout" do
   redirect "/"
 end
 
+# register a new user
+get "/users/register" do
+  erb :register
+end
+
+post "/users/register" do
+  # add username and password to the users.yaml file, while hashing the password in the process
+  # read users.yaml file and store it in a hash
+  # add the key, value pair from registration to the hash
+  # store that complete hash again in the users.yaml file
+  # new_user = Hash.new
+  # new_user[params[:username]] = params[:password]
+  # File.open("users_ori.yaml", "w") { |file| file.write(new_user)}
+
+  users = load_user_credentials
+  #users[params[:username]] = params[:password]
+  File.open("users_ori.yaml", "w") { |file| file.write(users.to_yaml)}
+  
+end
+
 # 19. next steps
 
 # We encourage you to explore this project further or create another of your own to practice some of the 
