@@ -68,6 +68,18 @@ def load_user_credentials
   YAML.load_file(credentials_path)
 end
 
+# Create incremented filename for duplicating names
+def duplicate_filename(original_name)
+  filename, extention = original_name.split(".")
+  if filename[-1].to_i.to_s == filename[-1]
+    new_increment = filename[-1].to_i + 1
+    filename = filename[0..-2] + new_increment.to_s
+  else
+    filename = filename + "1"
+  end
+  filename + "." + extention 
+end
+
 before do
   @users = load_user_credentials
 end
@@ -125,7 +137,7 @@ get "/:filename/edit" do
   file_path = File.join(data_path, params[:filename])
 
   if File.exist?(file_path)
-    @content = File.read(file_path) # load_file_content(file_path, post_request: true)
+    @content = File.read(file_path)
     erb :edit_file
   else
     session[:message] = "#{params[:filename]} does not exist."
@@ -151,6 +163,15 @@ post "/:filename/destroy" do
   File.delete(file_path)
 
   session[:message] = "#{params[:filename]} has been deleted."
+  redirect "/"
+end
+
+post "/:filename/duplicate" do
+  require_signed_in_user
+  file_path = File.join(data_path, params[:filename])
+  file_path_new_file = File.join(data_path, duplicate_filename(params[:filename]))
+  File.new(file_path_new_file, 111)
+  File.write(file_path_new_file, File.read(file_path))
   redirect "/"
 end
 
@@ -180,11 +201,26 @@ post "/users/signout" do
   redirect "/"
 end
 
-# 18. Storing hashed passwords
-  # add bcrypt to gemfile and run bundle install
-  # require bcrypt
-  # call the correct bcrypt method on the input params[:password] before comparing it to the database
-  # create a hashed value of each currently used password in the database and exchange the plain text password
-  # in the database with the hashed value
-  # enjoy!
+# 19. next steps
 
+# We encourage you to explore this project further or create another of your own to practice some of the 
+# techniques we've covered in this project and the course as a whole. Here are a few ideas:
+
+## 1. Validate that document names contain an extension that the application supports.
+# 2. Add a "duplicate" button that creates a new document based on an old one.
+# 3. Extend this project with a user signup form.
+# 4. Add the ability to upload images to the CMS (which could be referenced within markdown files).
+# 5. Modify the CMS so that each version of a document is preserved as changes are made to it.
+
+# 2. duplicate button
+  # implement it in the same way as the delete button
+  # create a route for post :filename/duplicate
+    # should use a combination of create new document and edit document, so the current content of the file is duplicated
+    # new document name should have an incremented number added to the end of it
+    # if no number currently appended, just add 1
+     
+
+
+# TODO
+  # when duplicating files, make sure to not overwrite files. eg. file, file1 - duplicate file --> file1 gets overwritten
+  #
