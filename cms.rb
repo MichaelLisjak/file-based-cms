@@ -23,6 +23,15 @@ def data_path
   end
 end
 
+def image_path
+  if ENV["RACK_ENV"] == "test"
+    # gets the current absolute directory of the ruby program that is running
+    File.expand_path("../test/public/images", __FILE__)
+  else
+    File.expand_path("../public/images", __FILE__)
+  end
+end
+
 # Returns the given markdown file as HTML
 def render_markdown(md_file)
   # Initialize Markdown object for converting markdown files into HTML
@@ -164,6 +173,23 @@ get "/:filename/edit" do
   end
 end
 
+# Load the upload form for images
+get "/upload/image" do
+  erb :upload_image
+end
+
+# Save the image in correct path
+post "/upload/image" do
+  image = params[:image_file]
+  file_path = File.join(image_path, image[:filename])
+  File.new(file_path, 111)
+  #File.write(file_path, File.read(image))
+  File.write(file_path, image)
+  session[:message] = "image has been uploaded successfully"
+  #redirect "/"
+  params.to_s
+end
+
 # Submit changes to document
 post "/:filename" do
   require_signed_in_user
@@ -245,15 +271,19 @@ end
 # 4. Add the ability to upload images to the CMS (which could be referenced within markdown files).
 # 5. Modify the CMS so that each version of a document is preserved as changes are made to it.
 
-# 2. duplicate button
-  # implement it in the same way as the delete button
-  # create a route for post :filename/duplicate
-    # should use a combination of create new document and edit document, so the current content of the file is duplicated
-    # new document name should have an incremented number added to the end of it
-    # if no number currently appended, just add 1
+# 4. upload images in the CMS
+  # create an upload form for pictures
+  # store uploaded images in public/images
+  # find out what kind of picture files can be referenced within markdown files
+  # check out how to reference pictures in markdown
+
+  # create a get route for the image upload form
+  # create a post route to handle the image upload
+
+
      
 
 
 # TODO
   # when duplicating files, make sure to not overwrite files. eg. file, file1 - duplicate file --> file1 gets overwritten
-  #
+  # 
