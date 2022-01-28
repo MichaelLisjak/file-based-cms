@@ -1,5 +1,7 @@
-{
-  bill: $2a$12$zeId5whrJ/giztRKG6IzMuaeXulkIpJTxTGynhcovywDl71rKnPDC,
-  sonia: $2a$12$yExVzwpnPLzY7LcMWvRXeuRBxtGomGOxUpiQi84ZgYJ0/gDrUPGeS,
-  admin: $2a$12$crE716yE/k94WwmXWELQGuxM5aVQpUG.azgBmVUuzqfLurqM.DQUC
-}
+---
+bill: "$2a$12$zeId5whrJ/giztRKG6IzMuaeXulkIpJTxTGynhcovywDl71rKnPDC"
+sonia: "$2a$12$yExVzwpnPLzY7LcMWvRXeuRBxtGomGOxUpiQi84ZgYJ0/gDrUPGeS"
+admin: "$2a$12$crE716yE/k94WwmXWELQGuxM5aVQpUG.azgBmVUuzqfLurqM.DQUC"
+test: "$2a$12$c3HGSnxmBI.xj2cRbpmEue7A0DsLZeYvJKchXuh3DyxGg4pBGz00q"
+michael: "$2a$12$iyxMGuV0z8fyxhDVdwNlWeSst2x/WLlVWqalZVjPTuOP94XTpW9jW"
+test123: "$2a$12$HSdIRcVQzO9HLanHYLu7Ge7RkPfgkQluceXR1IQFo.CiXr8VRCXQW"

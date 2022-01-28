@@ -30,6 +30,7 @@ def render_markdown(md_file)
   markdown.render(md_file)
 end
 
+# Loads the files content for displaying it in the browser
 def load_file_content(path, post_request: false)
   content = File.read(path)
   case File.extname(path)
@@ -41,10 +42,12 @@ def load_file_content(path, post_request: false)
   end
 end
 
+# Checks if a user is signed in
 def user_signed_in?
   @users.keys.include?(session[:username])
 end
 
+# Checks if an action requires a user to be signed in
 def require_signed_in_user
   if !user_signed_in?
     session[:message] = "You must be signed in to do that."
@@ -52,11 +55,25 @@ def require_signed_in_user
   end
 end
 
+# Checks if a user/password combination is valid
 def user_valid?(username, password)
   @users.each do |user, pw|
     return true if (user == username && BCrypt::Password.new(pw) == password)
   end
   false
+end
+
+# Register a new user and save his credentials in the user.yaml file
+def register_new_user(username, password)
+  users = load_user_credentials
+  if users.include?(username)
+    session[:message] = "That username already exists"
+    redirect "/"
+  else
+    hashed_password = BCrypt::Password.create(password)
+    users[username] = hashed_password.to_s
+    File.open("users.yaml", "w") { |file| YAML.dump(users, file)}
+  end
 end
 
 def load_user_credentials
@@ -83,6 +100,8 @@ end
 before do
   @users = load_user_credentials
 end
+
+# --------------------- Routes -------------------------
 
 # Display overview of all available files
 get "/" do
@@ -207,18 +226,12 @@ get "/users/register" do
 end
 
 post "/users/register" do
-  # add username and password to the users.yaml file, while hashing the password in the process
-  # read users.yaml file and store it in a hash
-  # add the key, value pair from registration to the hash
-  # store that complete hash again in the users.yaml file
-  # new_user = Hash.new
-  # new_user[params[:username]] = params[:password]
-  # File.open("users_ori.yaml", "w") { |file| file.write(new_user)}
+  register_new_user(params[:username], params[:password])
+  redirect "/"
+end
 
-  users = load_user_credentials
-  #users[params[:username]] = params[:password]
-  File.open("users_ori.yaml", "w") { |file| file.write(users.to_yaml)}
-  
+get "/test/test" do
+  register_new_user("test123", "123456")
 end
 
 # 19. next steps
@@ -228,7 +241,7 @@ end
 
 ## 1. Validate that document names contain an extension that the application supports.
 # 2. Add a "duplicate" button that creates a new document based on an old one.
-# 3. Extend this project with a user signup form.
+## 3. Extend this project with a user signup form.
 # 4. Add the ability to upload images to the CMS (which could be referenced within markdown files).
 # 5. Modify the CMS so that each version of a document is preserved as changes are made to it.
 
